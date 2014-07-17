@@ -5,18 +5,94 @@ import java.util.Arrays;
 
 /**
  *
- * @author ljubo
+ * @author Ljubo Raicevic <rljubo90@gmail.com>
  */
 public class LinearRegression {
+    
     public static Matrix compute (double[][] paramX , double[] paramY) {
+        
+        //number of test cases; rows is X
+        int m = paramX[0].length;
+        //number of parameters
+        int n = paramX.length;
+        //learning rate
+        double alpha = 0.1;
+        //convergence treshold
+        double treshold = 0.5;
+        
         Matrix X = new Matrix(paramX);
         Matrix y = new Matrix(paramY, 1);
-        Matrix theta = new Matrix(new double[1][paramX.length]);
-        //Matrix theta = new Matrix(new double[][]{{1, 1}});
         
-        System.out.println(cost(theta, X, y));
+        //theta is set to zeros at first
+        //Matrix theta = new Matrix(1, paramX.length);
+        Matrix theta = new Matrix(new double[][]{{1, 5}});
         
-        return null;
+        //GRADIENT DESCENT
+        double gradientStep = Integer.MAX_VALUE;
+        
+        //while (gradientStep > treshold) {
+        for (int iCount = 0; iCount < 300; iCount++){
+            Matrix difference = getDifference(theta, X, y);
+            Matrix tmpM = repmatByRow(difference, n);
+            tmpM = dotProduct(tmpM, X);
+            Matrix M = new Matrix(rowSums(tmpM));
+            
+            theta = theta.minus(M.times(alpha/(m*1.0)));
+            //gradientStep = 
+        }
+        //END OF GRADIENT DESCENT
+
+        System.out.println(Arrays.deepToString(theta.getArray()));
+        //System.out.println(cost(getDifference(theta, X, y), X.getArray()[0].length));
+        
+        return theta;
+    }
+    
+    private static double[][] rowSums(Matrix matrix) {
+        double[][] originalArray = matrix.getArray();
+        int rows = originalArray.length;
+        int cols = originalArray[0].length;
+        double[][] result = new double[1][rows];
+        
+        for (int iCount = 0; iCount < rows; iCount++) {
+            double sum = 0.0;
+            for (int jCount = 0; jCount < cols; jCount++) {
+                sum += originalArray[iCount][jCount];
+            }
+            result[0][iCount] = sum;
+        }
+        
+        return result;
+    }
+    
+    private static Matrix dotProduct(Matrix a, Matrix b) {
+        double[][] aArray = a.getArray();
+        double[][] bArray = b.getArray();
+        
+        if (aArray.length != bArray.length || aArray[0].length != bArray[0].length) {
+            throw new Error("Matrices of different dimensions");
+        }
+        
+        for (int iCount = 0; iCount < aArray.length; iCount++) {
+            for (int jCount = 0; jCount < aArray[0].length; jCount++) {
+                aArray[iCount][jCount] *= bArray[iCount][jCount];
+            }
+        }
+        
+        return new Matrix(aArray);
+    }
+    
+    private static Matrix repmatByRow(Matrix original, int rows) {
+        double[][] originalArray = original.getArray();
+        int originalRows = originalArray.length;
+        int originalCols = originalArray[0].length;
+        double[][] newArray = new double[originalRows * rows][originalCols];
+        
+        for (int iCount = 0; iCount < originalRows * rows; iCount++) {
+            System.arraycopy(originalArray[iCount % originalRows], 0, newArray[iCount], 0, originalCols);
+        }
+        
+        return new Matrix(newArray);
     }
     
     private static Matrix hypothesis(Matrix paramTheta, Matrix paramX) {
@@ -26,10 +102,27 @@ public class LinearRegression {
         return result;
     }
     
-    private static double cost(Matrix paramTheta, Matrix paramX, Matrix paramY) {
-        //find the difference between hypothesises and Ys
-        Matrix difference = hypothesis(paramTheta, paramX).minus(paramY);
-        
+    /**
+     * Find the difference between hypotheses and Ys - main part of the cost
+     * 
+     * @param theta
+     * @param X Test cases
+     * @param y Real results
+     * @return 
+     */
+    private static Matrix getDifference(Matrix theta, Matrix X, Matrix y) {
+        return hypothesis(theta, X).minus(y);
+    }
+    
+    /**
+     * Squares a given "difference" vector and returns actual cost for a given
+     * difference (difference from real values - y).
+     * 
+     * @param difference of hypothesis and actual results [(Theta * X) .- y]
+     * @param m Number of test cases
+     * @return Cost for a single value of vector theta
+     */
+    private static double cost(Matrix difference, int m) {
         double sum = 0;
         
         //find the sum of squared differences
@@ -37,9 +130,6 @@ public class LinearRegression {
         for (int iCount = 0; iCount < differenceArray[0].length; iCount++) {
             sum += differenceArray[0][iCount] * differenceArray[0][iCount];
         }
-        
-        //get m, number of test cases
-        int m = paramX.getArray()[0].length;
         
         //multiply sum by 1/(2m)
         return sum * (1.0 / (2.0 * m));
