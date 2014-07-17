@@ -2,6 +2,8 @@ package calibrationcurves;
 
 import Jama.Matrix;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -24,22 +26,27 @@ public class LinearRegression {
         Matrix y = new Matrix(paramY, 1);
         
         //theta is set to zeros at first
-        //Matrix theta = new Matrix(1, paramX.length);
-        Matrix theta = new Matrix(new double[][]{{1, 5}});
+        Matrix theta = new Matrix(1, paramX.length);
+        //Matrix theta = new Matrix(new double[][]{{1, 5}});
         
         //GRADIENT DESCENT
         double gradientStep = Integer.MAX_VALUE;
         
         //while (gradientStep > treshold) {
-        for (int iCount = 0; iCount < 300; iCount++){
-            Matrix difference = getDifference(theta, X, y);
-            Matrix tmpM = repmatByRow(difference, n);
-            tmpM = dotProduct(tmpM, X);
-            Matrix M = new Matrix(rowSums(tmpM));
-            
-            theta = theta.minus(M.times(alpha/(m*1.0)));
-            //gradientStep = 
+        for (int iCount = 0; iCount < 1000; iCount++){
+            try {
+                Matrix difference = getDifference(theta, X, y);
+                Matrix tmpM = repmatByRow(difference, n);
+                tmpM = dotProduct(tmpM, X);
+                Matrix M = new Matrix(rowSums(tmpM));
+                
+                theta = theta.minus(M.times(alpha/(m*1.0)));
+                //gradientStep = 
+            } catch (Exception ex) {
+                Logger.getLogger(LinearRegression.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
+        
         //END OF GRADIENT DESCENT
 
         System.out.println(Arrays.deepToString(theta.getArray()));
@@ -65,12 +72,13 @@ public class LinearRegression {
         return result;
     }
     
-    private static Matrix dotProduct(Matrix a, Matrix b) {
+    private static Matrix dotProduct(Matrix a, Matrix b) throws Exception {
         double[][] aArray = a.getArray();
         double[][] bArray = b.getArray();
         
         if (aArray.length != bArray.length || aArray[0].length != bArray[0].length) {
-            throw new Error("Matrices of different dimensions");
+            System.out.println("abcde");
+            throw new Exception("Matrices not the same size.");
         }
         
         for (int iCount = 0; iCount < aArray.length; iCount++) {
@@ -82,7 +90,12 @@ public class LinearRegression {
         return new Matrix(aArray);
     }
     
-    private static Matrix repmatByRow(Matrix original, int rows) {
+    private static Matrix repmatByRow(Matrix original, int rows) throws Exception {
+        if (rows < 1) {
+            throw new Exception("Matrix needs to be multiplied by a number "
+                    + "greater than 1");
+        }
+        
         double[][] originalArray = original.getArray();
         int originalRows = originalArray.length;
         int originalCols = originalArray[0].length;
