@@ -111,8 +111,14 @@ public class FMain extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
-        Pair pair = (Pair) listCalibrations.getSelectedValue();
-        System.out.println(pair.getNum());
+        if (listCalibrations.getSelectedIndex() != -1) {
+            Pair pair = (Pair) listCalibrations.getSelectedValue();
+            DCalibrationView dcv = new DCalibrationView(pair.getNum(), this, true);
+            dcv.setLocationRelativeTo(this);
+            dcv.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(null, "No calibration chosen.");
+        }
     }//GEN-LAST:event_btnOpenActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
