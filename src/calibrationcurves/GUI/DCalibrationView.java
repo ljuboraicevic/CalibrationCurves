@@ -1,5 +1,7 @@
 package calibrationcurves.GUI;
 
+import Jama.Matrix;
+import calibrationcurves.LinearRegression;
 import calibrationcurves.connection.ConnectionBase;
 import java.awt.BorderLayout;
 import java.sql.ResultSet;
@@ -108,6 +110,54 @@ public class DCalibrationView extends javax.swing.JDialog {
             Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    private void learn() {
+        try {
+            ResultSet rs = cb.izvrsiQuery("SELECT COUNT(*) "
+                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
+            
+            int rows = rs.getInt("COUNT(*)");
+            
+            double[][] X = new double[3][rows];
+            double[] y = new double[rows];
+            
+            rs = cb.izvrsiQuery("SELECT time, fibrinogen "
+                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
+            
+            int iCount = 0;
+            
+            //populate input
+            while (rs.next()) {
+                y[iCount] = Double.parseDouble(rs.getString("fibrinogen"));
+                double x = Double.parseDouble(rs.getString("time"));
+                //adding x to third power
+                X[0][iCount] = 1;
+                X[1][iCount] = x;
+                X[2][iCount] = x*x;
+                //X[3][iCount] = x*x*x;
+                iCount++;
+            }
+            
+            Matrix theta = LinearRegression.compute(X, y);
+            addLearnedFunction(theta);
+        } catch (SQLException ex) {
+            Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private void addLearnedFunction(Matrix theta) {
+        //first, delete previously learned functions (if any)
+        cb.izvrsiQueryBezRezultata("DELETE FROM learned_functions "
+                + "WHERE calibration_id_fk = " + calibration);
+        
+        double[] m = theta.getRowPackedCopy();
+        cb.izvrsiQueryBezRezultata("INSERT INTO \"learned_functions\" "
+                //+ "(\"theta0\", \"theta1\", \"theta2\", \"theta3\", \"calibration_id_fk\") VALUES "
+                //+ "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ m[3] +"\", \""+ calibration +"\")"
+                + "(\"theta0\", \"theta1\", \"theta2\", \"calibration_id_fk\") VALUES "
+                + "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ calibration +"\")"
+                        );
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -174,6 +224,11 @@ public class DCalibrationView extends javax.swing.JDialog {
         );
 
         btnLearn.setText("Learn");
+        btnLearn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnLearnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -253,6 +308,10 @@ public class DCalibrationView extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(null, "No measurement chosen.");
         }
     }//GEN-LAST:event_btnDeleteActionPerformed
+
+    private void btnLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLearnActionPerformed
+        learn();
+    }//GEN-LAST:event_btnLearnActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
