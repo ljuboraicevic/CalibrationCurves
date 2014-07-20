@@ -206,9 +206,10 @@ public class DCalibrationView extends javax.swing.JDialog {
             
             //calculate 20 points for learned function
             deleteLearnedPoints(calibration);
-            double step = x1max / 18;
+            double step = (x1max - x1min) / 18;
+            int start = (int) (x1min / step);
             double[] thetas = theta.getRowPackedCopy();
-            for (iCount = 0; iCount < 20; iCount++) {
+            for (iCount = start; iCount < start + 20; iCount++) {
                 double cx = iCount * step;
                 double cy = thetas[0] 
                         + thetas[1] * ((cx - means[1]) / ranges[1])

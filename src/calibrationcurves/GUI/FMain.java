@@ -55,6 +55,16 @@ public class FMain extends javax.swing.JFrame {
             }
         });
 
+        listCalibrations.setModel(new javax.swing.AbstractListModel() {
+            String[] strings = { "Loading..." };
+            public int getSize() { return strings.length; }
+            public Object getElementAt(int i) { return strings[i]; }
+        });
+        listCalibrations.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                listCalibrationsMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(listCalibrations);
 
         btnAdd.setText("Add");
@@ -153,6 +163,19 @@ public class FMain extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "No calibration chosen.");
         }
     }//GEN-LAST:event_btnDeleteActionPerformed
+
+    private void listCalibrationsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_listCalibrationsMouseClicked
+        if (evt.getClickCount() == 2) {
+            if (listCalibrations.getSelectedIndex() != -1) {
+                Pair pair = (Pair) listCalibrations.getSelectedValue();
+                DCalibrationView dcv = new DCalibrationView(pair.getNum(), this, true);
+                dcv.setLocationRelativeTo(this);
+                dcv.setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(null, "No calibration chosen.");
+            }
+        }
+    }//GEN-LAST:event_listCalibrationsMouseClicked
 
     /**
      * @param args the command line arguments

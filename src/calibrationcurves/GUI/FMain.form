@@ -70,9 +70,14 @@
         <Component class="javax.swing.JList" name="listCalibrations">
           <Properties>
             <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
-              <StringArray count="0"/>
+              <StringArray count="1">
+                <StringItem index="0" value="Loading..."/>
+              </StringArray>
             </Property>
           </Properties>
+          <Events>
+            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="listCalibrationsMouseClicked"/>
+          </Events>
         </Component>
       </SubComponents>
     </Container>
