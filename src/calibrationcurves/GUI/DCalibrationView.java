@@ -1,9 +1,21 @@
 package calibrationcurves.GUI;
 
 import calibrationcurves.connection.ConnectionBase;
+import java.awt.BorderLayout;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  *
@@ -38,9 +50,63 @@ public class DCalibrationView extends javax.swing.JDialog {
         cb.izvrsiQueryBezRezultata("DELETE FROM measurements WHERE "
                 + "measurements_id_pk = " + id);
     }
-    
-    private void displayChart() {
         
+    private void displayChart() {
+        try {
+            //get points from database
+            ResultSet rsPoints = cb.izvrsiQuery("SELECT time, fibrinogen "
+                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
+            
+            //add points to xyseries
+            XYSeries points = new XYSeries("Points");
+            while (rsPoints.next()) {
+                points.add(Double.parseDouble(rsPoints.getObject(1).toString()), 
+                        Double.parseDouble(rsPoints.getObject(2).toString()));
+            }
+            
+            //add learned function to xyseries
+            //get points from database
+            ResultSet rsLearned = cb.izvrsiQuery("SELECT x, y "
+                    + "FROM learned_points WHERE calibration_id_fk = " + calibration);
+            
+            //add points to xyseries
+            XYSeries learned = new XYSeries("Learned");
+            while (rsLearned.next()) {
+                learned.add(Double.parseDouble(rsLearned.getObject(1).toString()), 
+                        Double.parseDouble(rsLearned.getObject(2).toString()));
+            }
+            
+            //create a dataset
+            XYSeriesCollection dataset = new XYSeriesCollection();
+            dataset.addSeries(points);
+            dataset.addSeries(learned);
+            
+            //create the chart
+            JFreeChart chart = ChartFactory.createXYLineChart(
+                    "Measurements", 
+                    "Time", 
+                    "Fibrinogen", 
+                    dataset, 
+                    PlotOrientation.VERTICAL, 
+                    false, true, false
+            );
+            
+            XYPlot plot = chart.getXYPlot();
+            XYLineAndShapeRenderer r = new XYLineAndShapeRenderer();
+            r.setSeriesLinesVisible(0, false);
+            r.setSeriesShapesVisible(1, false);
+            
+            plot.setRenderer(r);
+            
+            ChartPanel cp = new ChartPanel(chart);
+            //cp.setPreferredSize(new java.awt.Dimension(500, 270));
+            rightPanel.setLayout(new java.awt.BorderLayout());
+            rightPanel.add(cp, BorderLayout.CENTER);
+            rightPanel.validate();
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -58,6 +124,7 @@ public class DCalibrationView extends javax.swing.JDialog {
         btnAdd = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
         rightPanel = new javax.swing.JPanel();
+        btnLearn = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -106,6 +173,8 @@ public class DCalibrationView extends javax.swing.JDialog {
             .addGap(0, 0, Short.MAX_VALUE)
         );
 
+        btnLearn.setText("Learn");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -117,11 +186,13 @@ public class DCalibrationView extends javax.swing.JDialog {
                         .addComponent(jLabel1)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(btnAdd)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnDelete))
+                                .addComponent(btnDelete)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnLearn))
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(rightPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
@@ -139,7 +210,8 @@ public class DCalibrationView extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnAdd)
-                            .addComponent(btnDelete)))
+                            .addComponent(btnDelete)
+                            .addComponent(btnLearn)))
                     .addComponent(rightPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -156,6 +228,7 @@ public class DCalibrationView extends javax.swing.JDialog {
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
         tMeasurements.setModel(loadMeasurements());
         tMeasurements.getColumnModel().removeColumn(tMeasurements.getColumnModel().getColumn(0));
+        displayChart();
     }//GEN-LAST:event_formWindowActivated
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
@@ -184,6 +257,7 @@ public class DCalibrationView extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDelete;
+    private javax.swing.JButton btnLearn;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPanel rightPanel;
