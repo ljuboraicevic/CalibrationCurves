@@ -203,9 +203,37 @@ public class DCalibrationView extends javax.swing.JDialog {
             
             Matrix theta = LinearRegression.compute(X, y);
             addLearnedFunction(theta, means, ranges);
+            
+            //calculate 20 points for learned function
+            deleteLearnedPoints(calibration);
+            double step = x1max / 18;
+            double[] thetas = theta.getRowPackedCopy();
+            for (iCount = 0; iCount < 20; iCount++) {
+                double cx = iCount * step;
+                double cy = thetas[0] 
+                        + thetas[1] * ((cx - means[1]) / ranges[1])
+                        + thetas[2] * ((cx*cx - means[2]) / ranges[2])
+                        + thetas[3] * ((cx*cx*cx - means[3]) / ranges[3]);
+                
+                //and add them to learned_points
+                addLearnedPoint(cx, cy, calibration);
+            }
+            
+            //plot the chart
+            displayChart();
         } catch (SQLException ex) {
             Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private void deleteLearnedPoints(int pCalibration) {
+        cb.izvrsiQueryBezRezultata("DELETE FROM learned_points WHERE "
+                + "calibration_id_fk = " + pCalibration);
+    }
+    
+    private void addLearnedPoint(double x, double y, int calibration_id_fk) {
+        cb.izvrsiQueryBezRezultata("INSERT INTO learned_points (x, y, calibration_id_fk) VALUES "
+                + "("+ x +", "+ y +", "+ calibration_id_fk +")");
     }
     
     private void addLearnedFunction(Matrix theta, double[] means, double[] ranges) {
@@ -343,6 +371,9 @@ public class DCalibrationView extends javax.swing.JDialog {
         DAddMeasurement dam = new DAddMeasurement(calibration, null, true);
         dam.setLocationRelativeTo(this);
         dam.setVisible(true);
+        if (dam.added) {
+            deleteLearnedPoints(calibration);
+        }
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
@@ -369,13 +400,19 @@ public class DCalibrationView extends javax.swing.JDialog {
         ) {
             String id = tMeasurements.getModel().getValueAt(tMeasurements.getSelectedRow(), 0).toString();
             deleteMeasurement(id);
+            deleteLearnedPoints(calibration);
         } else {
             JOptionPane.showMessageDialog(null, "No measurement chosen.");
         }
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnLearnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLearnActionPerformed
-        learn();
+        if (tMeasurements.getModel().getRowCount() < 2) {
+            JOptionPane.showMessageDialog(null, "Calibration must contain "
+                    + "at least two measurements.");
+        } else {
+            learn();
+        }
     }//GEN-LAST:event_btnLearnActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
