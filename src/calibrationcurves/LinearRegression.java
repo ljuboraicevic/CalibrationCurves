@@ -18,7 +18,7 @@ public class LinearRegression {
         //number of parameters
         int n = paramX.length;
         //learning rate
-        double alpha = 0.1;
+        double alpha = 0.6;
         //convergence treshold
         double treshold = 0.5;
         
@@ -33,7 +33,7 @@ public class LinearRegression {
         double gradientStep = Integer.MAX_VALUE;
         
         //while (gradientStep > treshold) {
-        for (int iCount = 0; iCount < 1000; iCount++){
+        for (int iCount = 0; iCount < 5000; iCount++){
             try {
                 Matrix difference = getDifference(theta, X, y);
                 Matrix tmpM = repmatByRow(difference, n);

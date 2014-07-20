@@ -118,13 +118,22 @@ public class DCalibrationView extends javax.swing.JDialog {
             
             int rows = rs.getInt("COUNT(*)");
             
-            double[][] X = new double[3][rows];
+            double[][] X = new double[4][rows];
             double[] y = new double[rows];
             
             rs = cb.izvrsiQuery("SELECT time, fibrinogen "
                     + "FROM measurements WHERE calibration_id_fk = " + calibration);
             
             int iCount = 0;
+            double x1sum = 0;
+            double x2sum = 0;
+            double x3sum = 0;
+            double x1min = Double.POSITIVE_INFINITY;
+            double x2min = Double.POSITIVE_INFINITY;
+            double x3min = Double.POSITIVE_INFINITY;
+            double x1max = Double.NEGATIVE_INFINITY;
+            double x2max = Double.NEGATIVE_INFINITY;
+            double x3max = Double.NEGATIVE_INFINITY;
             
             //populate input
             while (rs.next()) {
@@ -134,28 +143,84 @@ public class DCalibrationView extends javax.swing.JDialog {
                 X[0][iCount] = 1;
                 X[1][iCount] = x;
                 X[2][iCount] = x*x;
-                //X[3][iCount] = x*x*x;
+                X[3][iCount] = x*x*x;
+                
+                //get the sum, min and max per column (parameter e.g. X1, X2...)
+                x1sum += X[1][iCount];
+                x2sum += X[2][iCount];
+                x3sum += X[3][iCount];
+                
+                if (X[1][iCount] < x1min) {
+                    x1min = X[1][iCount];
+                }
+                
+                if (X[2][iCount] < x2min) {
+                    x2min = X[2][iCount];
+                }
+                
+                if (X[3][iCount] < x3min) {
+                    x3min = X[3][iCount];
+                }
+                
+                if (X[1][iCount] > x1max) {
+                    x1max = X[1][iCount];
+                }
+                
+                if (X[2][iCount] > x2max) {
+                    x2max = X[2][iCount];
+                }
+                
+                if (X[3][iCount] > x3max) {
+                    x3max = X[3][iCount];
+                }
+
                 iCount++;
             }
             
+            double x1mean = x1sum / iCount;
+            double x2mean = x2sum / iCount;
+            double x3mean = x3sum / iCount;
+            double x1range = x1max - x1min;
+            double x2range = x2max - x2min;
+            double x3range = x3max - x3min;
+            
+            //mean normalization; (x - mean) / range
+            for (iCount = 0; iCount < X[0].length; iCount++) {
+                X[1][iCount] = (X[1][iCount] - x1mean) / x1range;
+                X[2][iCount] = (X[2][iCount] - x2mean) / x2range;
+                X[3][iCount] = (X[3][iCount] - x3mean) / x3range;
+            }
+            
+            double[] means  = new double[4];
+            means[1] = x1mean;
+            means[2] = x2mean;
+            means[3] = x3mean;
+            
+            double[] ranges = new double[4];
+            ranges[1] = x1range;
+            ranges[2] = x2range;
+            ranges[3] = x3range;
+            
             Matrix theta = LinearRegression.compute(X, y);
-            addLearnedFunction(theta);
+            addLearnedFunction(theta, means, ranges);
         } catch (SQLException ex) {
             Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    private void addLearnedFunction(Matrix theta) {
+    private void addLearnedFunction(Matrix theta, double[] means, double[] ranges) {
         //first, delete previously learned functions (if any)
         cb.izvrsiQueryBezRezultata("DELETE FROM learned_functions "
                 + "WHERE calibration_id_fk = " + calibration);
         
         double[] m = theta.getRowPackedCopy();
         cb.izvrsiQueryBezRezultata("INSERT INTO \"learned_functions\" "
-                //+ "(\"theta0\", \"theta1\", \"theta2\", \"theta3\", \"calibration_id_fk\") VALUES "
-                //+ "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ m[3] +"\", \""+ calibration +"\")"
-                + "(\"theta0\", \"theta1\", \"theta2\", \"calibration_id_fk\") VALUES "
-                + "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ calibration +"\")"
+                + "(\"theta0\", \"theta1\", \"theta2\", \"theta3\", "
+                + "\"calibration_id_fk\", \"mean1\", \"mean2\", \"mean3\", "
+                + "\"range1\", \"range2\", \"range3\") VALUES "
+                + "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ m[3] +"\", \""
+                + calibration +"\", \""+means[1]+"\", \""+means[2]+"\", \""+means[3]+"\" "
+                + ", \""+ranges[1]+"\", \""+ranges[1]+"\", \""+ranges[1]+"\")"
                         );
     }
 
