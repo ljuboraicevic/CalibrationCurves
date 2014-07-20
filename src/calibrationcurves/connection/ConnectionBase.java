@@ -20,24 +20,33 @@ import javax.swing.table.DefaultTableModel;
 public class ConnectionBase {
     
     private static final String connectionString = "jdbc:sqlite:fibrinogen_curves.sqlite";
+    static Connection conn = null;
+    
+    private static Connection cb() {
+        try {
+            if (conn == null) {
+                Class.forName("org.sqlite.JDBC");
+                conn = DriverManager.getConnection(connectionString);
+                conn.setAutoCommit(true);
+            }
+            return conn;
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e);
+            return null;
+        }
+    }
     
     public ConnectionBase() {}
 
     public ResultSet izvrsiQuery(String kveri) {
         try {
-            //ovaj deo sluzi za uspostavljanje konekcije
-            Class.forName("org.sqlite.JDBC");
-            Connection c = DriverManager.getConnection(connectionString);
-            
             //ovde pravimo statement i izvrsavamo ga pomocu konekcije
-            Statement stmt = c.createStatement();
+            Statement stmt = cb().createStatement();
             ResultSet rs = stmt.executeQuery(kveri);
-            //stmt.close();
-            //c.close();
             return rs;
-        } catch (ClassNotFoundException | SQLException ex) {
+        } catch (SQLException ex) {
             Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "<html>Izgubljena je konekcija sa serverom!<br>Program će se sada ugasiti. Postarajte se da je internet konekcija u redu, a zatim ponovo pokrenite program.</html>");
+            JOptionPane.showMessageDialog(null, ex);
             System.exit(1);
             return null;
         }
@@ -45,18 +54,12 @@ public class ConnectionBase {
     
     public void izvrsiQueryBezRezultata(String kveri) {
         try {
-            //ovaj deo sluzi za uspostavljanje konekcije
-            Class.forName("org.sqlite.JDBC");
-            Connection c = DriverManager.getConnection(connectionString);
-            
             //ovde pravimo statement i izvrsavamo ga pomocu konekcije
-            Statement stmt = c.createStatement();
+            Statement stmt = cb().createStatement();
             stmt.execute(kveri);
-            //stmt.close();
-            //c.close();
-        } catch (ClassNotFoundException | SQLException ex) {
+        } catch (SQLException ex) {
             Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "<html>Izgubljena je konekcija sa serverom!<br>Program će se sada ugasiti. Postarajte se da je internet konekcija u redu, a zatim ponovo pokrenite program.</html>");
+            JOptionPane.showMessageDialog(null, ex);
             System.exit(1);
         }
     }
