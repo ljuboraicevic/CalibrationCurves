@@ -11,7 +11,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
 
     ConnectionBase cb;
     int calibration;
-    boolean added;
     
     /**
      * Creates new form DAddMeasurement
@@ -21,7 +20,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
         initComponents();
         cb = new ConnectionBase();
         this.calibration = calibration;
-        this.added = false;
     }
     
     private static boolean isDouble(String s) {
@@ -37,7 +35,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
         cb.izvrsiQueryBezRezultata("INSERT INTO \"measurements\" "
                 + "(\"time\", \"fibrinogen\", \"calibration_id_fk\") VALUES "
                 + "(\""+ time +"\", \""+ fibrinogen +"\", \""+ calibration +"\")");
-        this.added = true;
     }
 
     /**

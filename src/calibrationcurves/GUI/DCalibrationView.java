@@ -372,9 +372,6 @@ public class DCalibrationView extends javax.swing.JDialog {
         DAddMeasurement dam = new DAddMeasurement(calibration, null, true);
         dam.setLocationRelativeTo(this);
         dam.setVisible(true);
-        if (dam.added) {
-            deleteLearnedPoints(calibration);
-        }
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
@@ -401,7 +398,6 @@ public class DCalibrationView extends javax.swing.JDialog {
         ) {
             String id = tMeasurements.getModel().getValueAt(tMeasurements.getSelectedRow(), 0).toString();
             deleteMeasurement(id);
-            deleteLearnedPoints(calibration);
         } else {
             JOptionPane.showMessageDialog(null, "No measurement chosen.");
         }
