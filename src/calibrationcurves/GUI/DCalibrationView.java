@@ -249,7 +249,7 @@ public class DCalibrationView extends javax.swing.JDialog {
                 + "\"range1\", \"range2\", \"range3\") VALUES "
                 + "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ m[3] +"\", \""
                 + calibration +"\", \""+means[1]+"\", \""+means[2]+"\", \""+means[3]+"\" "
-                + ", \""+ranges[1]+"\", \""+ranges[1]+"\", \""+ranges[1]+"\")"
+                + ", \""+ranges[1]+"\", \""+ranges[2]+"\", \""+ranges[3]+"\")"
                         );
     }
 
@@ -269,6 +269,7 @@ public class DCalibrationView extends javax.swing.JDialog {
         btnDelete = new javax.swing.JButton();
         rightPanel = new javax.swing.JPanel();
         btnLearn = new javax.swing.JButton();
+        btnCalculator = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -324,6 +325,13 @@ public class DCalibrationView extends javax.swing.JDialog {
             }
         });
 
+        btnCalculator.setText("Calculator");
+        btnCalculator.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCalculatorActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -340,10 +348,11 @@ public class DCalibrationView extends javax.swing.JDialog {
                                 .addComponent(btnAdd)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(btnDelete)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 55, Short.MAX_VALUE)
                                 .addComponent(btnLearn))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(btnCalculator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(rightPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -355,12 +364,14 @@ public class DCalibrationView extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 449, Short.MAX_VALUE)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 415, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnAdd)
                             .addComponent(btnDelete)
-                            .addComponent(btnLearn)))
+                            .addComponent(btnLearn))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnCalculator))
                     .addComponent(rightPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -412,8 +423,42 @@ public class DCalibrationView extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_btnLearnActionPerformed
 
+    private void btnCalculatorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCalculatorActionPerformed
+        try {
+            //get thetas, means and ranges for this calibration from database
+            double[] thetas = new double[4];
+            double[] means  = new double[3];
+            double[] ranges = new double[3];
+            
+            ResultSet rs = cb.izvrsiQuery("SELECT * FROM learned_functions "
+                    + "WHERE calibration_id_fk = " + calibration);
+            
+            while (rs.next()) {
+                thetas[0] = Double.parseDouble(rs.getObject("theta0").toString());
+                thetas[1] = Double.parseDouble(rs.getObject("theta1").toString());
+                thetas[2] = Double.parseDouble(rs.getObject("theta2").toString());
+                thetas[3] = Double.parseDouble(rs.getObject("theta3").toString());
+                
+                means[0] = Double.parseDouble(rs.getObject("mean1").toString());
+                means[1] = Double.parseDouble(rs.getObject("mean2").toString());
+                means[2] = Double.parseDouble(rs.getObject("mean3").toString());
+                
+                ranges[0] = Double.parseDouble(rs.getObject("range1").toString());
+                ranges[1] = Double.parseDouble(rs.getObject("range2").toString());
+                ranges[2] = Double.parseDouble(rs.getObject("range3").toString());
+            }
+            
+            DCalculator dc = new DCalculator(null, true, thetas, means, ranges);
+            dc.setLocationRelativeTo(this);
+            dc.setVisible(true);
+        } catch (SQLException ex) {
+            Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btnCalculatorActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
+    private javax.swing.JButton btnCalculator;
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnLearn;
     private javax.swing.JLabel jLabel1;
