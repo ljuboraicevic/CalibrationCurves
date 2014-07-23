@@ -1,127 +1,88 @@
 package calibrationcurves;
 
 import Jama.Matrix;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Linear regression.
+ * 
  * @author Ljubo Raicevic <rljubo90@gmail.com>
  */
 public class LinearRegression {
     
-    public static Matrix compute (double[][] paramX , double[] paramY) {
+    /**
+     * Calculates linear regression, given feature set X and target set y
+     * 
+     * @param paramX - # of rows is number of parameters, # of columns is number of training examples
+     * @param paramY - # of rows is number of training examples
+     * @param alpha Learning rate
+     * @param gradDescRepeat how many times to repeat gradient descent
+     * @return Matrix theta which contains one theta parameter for each parameter
+     * in X (row in X)
+     */
+    public static Matrix compute (double[][] paramX , double[] paramY, 
+            double alpha, int gradDescRepeat) {
         
         //number of test cases; rows is X
         int m = paramX[0].length;
         //number of parameters
         int n = paramX.length;
-        //learning rate
-        double alpha = 0.6;
-        //convergence treshold
-        double treshold = 0.5;
+        //convergence treshold; currently not used (gradient descent repeats a
+        //fixed number of times). TODO implement it with treshold
+        //double treshold = 0.5;
         
+        //create feature set matrix X, and target set matrix y from arguments
         Matrix X = new Matrix(paramX);
-        Matrix y = new Matrix(paramY, 1);
+        Matrix y = new Matrix(paramY, 1); //horizontal vector
         
         //theta is set to zeros at first
         Matrix theta = new Matrix(1, paramX.length);
-        //Matrix theta = new Matrix(new double[][]{{1, 5}});
         
         //GRADIENT DESCENT
-        double gradientStep = Integer.MAX_VALUE;
-        
-        //while (gradientStep > treshold) {
-        for (int iCount = 0; iCount < 5000; iCount++){
+        //repeat gradient descent a fixed number of times
+        for (int iCount = 0; iCount < gradDescRepeat; iCount++){
             try {
+                //get the difference between this iteration of gradient descent
+                //and expected target set y
                 Matrix difference = getDifference(theta, X, y);
-                Matrix tmpM = repmatByRow(difference, n);
-                tmpM = dotProduct(tmpM, X);
-                Matrix M = new Matrix(rowSums(tmpM));
                 
+                //vectorized derivative of the difference
+                Matrix tmpM = JAMAMatrixUtils.repmatByRow(difference, n);
+                tmpM.arrayTimesEquals(X);
+                Matrix M = new Matrix(JAMAMatrixUtils.rowSums(tmpM));
+                
+                //"move" theta a little closer to optimum
                 theta = theta.minus(M.times(alpha/(m*1.0)));
-                //gradientStep = 
             } catch (Exception ex) {
                 Logger.getLogger(LinearRegression.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         
         //END OF GRADIENT DESCENT
-
-        System.out.println(Arrays.deepToString(theta.getArray()));
-        //System.out.println(cost(getDifference(theta, X, y), X.getArray()[0].length));
         
         return theta;
     }
     
-    private static double[][] rowSums(Matrix matrix) {
-        double[][] originalArray = matrix.getArray();
-        int rows = originalArray.length;
-        int cols = originalArray[0].length;
-        double[][] result = new double[1][rows];
-        
-        for (int iCount = 0; iCount < rows; iCount++) {
-            double sum = 0.0;
-            for (int jCount = 0; jCount < cols; jCount++) {
-                sum += originalArray[iCount][jCount];
-            }
-            result[0][iCount] = sum;
-        }
-        
-        return result;
-    }
-    
-    private static Matrix dotProduct(Matrix a, Matrix b) throws Exception {
-        double[][] aArray = a.getArray();
-        double[][] bArray = b.getArray();
-        
-        if (aArray.length != bArray.length || aArray[0].length != bArray[0].length) {
-            System.out.println("abcde");
-            throw new Exception("Matrices not the same size.");
-        }
-        
-        for (int iCount = 0; iCount < aArray.length; iCount++) {
-            for (int jCount = 0; jCount < aArray[0].length; jCount++) {
-                aArray[iCount][jCount] *= bArray[iCount][jCount];
-            }
-        }
-        
-        return new Matrix(aArray);
-    }
-    
-    private static Matrix repmatByRow(Matrix original, int rows) throws Exception {
-        if (rows < 1) {
-            throw new Exception("Matrix needs to be multiplied by a number "
-                    + "greater than 1");
-        }
-        
-        double[][] originalArray = original.getArray();
-        int originalRows = originalArray.length;
-        int originalCols = originalArray[0].length;
-        double[][] newArray = new double[originalRows * rows][originalCols];
-        
-        for (int iCount = 0; iCount < originalRows * rows; iCount++) {
-            System.arraycopy(originalArray[iCount % originalRows], 0, newArray[iCount], 0, originalCols);
-        }
-        
-        return new Matrix(newArray);
-    }
-    
+    /**
+     * Vectorized calculation of hypothesis
+     * 
+     * @param paramTheta vector theta
+     * @param paramX feature set 
+     * @return vector theta times X
+     */
     private static Matrix hypothesis(Matrix paramTheta, Matrix paramX) {
-        
-        Matrix result = paramTheta.times(paramX);
-        //System.out.println(Arrays.deepToString(result.getArray()));
-        return result;
+        return paramTheta.times(paramX);
     }
     
     /**
-     * Find the difference between hypotheses and Ys - main part of the cost
+     * Find the difference between hypotheses (feature set times theta)
+     * and target set y; main part of the cost
      * 
-     * @param theta
-     * @param X Test cases
-     * @param y Real results
-     * @return 
+     * @param theta parameters
+     * @param X feature set
+     * @param y target set
+     * @return Difference between this value of theta with expected target set y
      */
     private static Matrix getDifference(Matrix theta, Matrix X, Matrix y) {
         return hypothesis(theta, X).minus(y);

@@ -201,7 +201,7 @@ public class DCalibrationView extends javax.swing.JDialog {
             ranges[2] = x2range;
             ranges[3] = x3range;
             
-            Matrix theta = LinearRegression.compute(X, y);
+            Matrix theta = LinearRegression.compute(X, y, 0.6, 5000);
             addLearnedFunction(theta, means, ranges);
             
             //calculate 20 points for learned function
