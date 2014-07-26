@@ -43,13 +43,13 @@ public class DCalibrationView extends javax.swing.JDialog {
     private void displayChart() {
         try {
             //get points for user points calibration
-            ResultSet rsPoints = calibration.getPoints();
+            ResultSet rsMeasurements = calibration.getMeasurements();
             
             //add points to xyseries
             XYSeries points = new XYSeries("Points");
-            while (rsPoints.next()) {
-                points.add(Double.parseDouble(rsPoints.getObject(1).toString()), 
-                        Double.parseDouble(rsPoints.getObject(2).toString()));
+            while (rsMeasurements.next()) {
+                points.add(Double.parseDouble(rsMeasurements.getObject("time").toString()), 
+                        Double.parseDouble(rsMeasurements.getObject("fibrinogen").toString()));
             }
             
             //add learned function to xyseries
@@ -103,8 +103,8 @@ public class DCalibrationView extends javax.swing.JDialog {
             double[][] X = new double[4][rows];
             double[] y = new double[rows];
             
-            //get user input points
-            ResultSet userPoints = calibration.getUserPoints();
+            //get measurements (user input points)
+            ResultSet userPoints = calibration.getMeasurements();
             
             int iCount = 0;
             double x1sum = 0;
@@ -187,7 +187,6 @@ public class DCalibrationView extends javax.swing.JDialog {
             calibration.addLearnedFunction(theta, means, ranges);
             
             //calculate 20 points for learned function
-            calibration.deleteAllLearnedPoints();
             double step = (x1max - x1min) / 18;
             int start = (int) (x1min / step);
             double[] thetas = theta.getRowPackedCopy();
