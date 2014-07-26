@@ -1,4 +1,4 @@
-package calibrationcurves.connection;
+package calibrationcurves.db;
 
 /**
  *

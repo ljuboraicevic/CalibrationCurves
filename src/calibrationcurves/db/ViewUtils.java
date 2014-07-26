@@ -1,89 +1,21 @@
-package calibrationcurves.connection;
+package calibrationcurves.db;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
-import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 /**
  *
- * @author ljubo
+ * @author Ljubo Raicevic <rljubo90@gmail.com>
  */
-public class ConnectionBase {
+public class ViewUtils {
     
-    private static final String connectionString = "jdbc:sqlite:fibrinogen_curves.sqlite";
-    static Connection conn = null;
-    
-    private static Connection cb() {
-        try {
-            if (conn == null) {
-                Class.forName("org.sqlite.JDBC");
-                conn = DriverManager.getConnection(connectionString);
-                conn.setAutoCommit(true);
-            }
-            return conn;
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
-            return null;
-        }
-    }
-    
-    public ConnectionBase() {}
-
-    public ResultSet izvrsiQuery(String kveri) {
-        try {
-            //ovde pravimo statement i izvrsavamo ga pomocu konekcije
-            Statement stmt = cb().createStatement();
-            ResultSet rs = stmt.executeQuery(kveri);
-            return rs;
-        } catch (SQLException ex) {
-            Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, ex);
-            System.exit(1);
-            return null;
-        }
-    }
-    
-    public int insertAndGetID(String query) {
-        int result = -1;
-        try {
-            Statement stmt = cb().createStatement();
-            stmt.execute(query);
-            ResultSet rs = stmt.getGeneratedKeys();
-            while (rs.next()) {
-                result = Integer.parseInt(rs.getObject(1).toString());
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, ex);
-            System.exit(1);
-        }
-        
-        return result;
-    }
-    
-    public void izvrsiQueryBezRezultata(String kveri) {
-        try {
-            //ovde pravimo statement i izvrsavamo ga pomocu konekcije
-            Statement stmt = cb().createStatement();
-            stmt.execute(kveri);
-        } catch (SQLException ex) {
-            Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, ex);
-            System.exit(1);
-        }
-    }
-    
-    public DefaultTableModel napraviROTableModel(ResultSet rs)
-    {
+    public static DefaultTableModel napraviROTableModel(ResultSet rs) {
                 
         //overriduje se isCellEditable da uvek vraca false, da bi model,
         //a s njim i tabela bili read-only
@@ -138,7 +70,7 @@ public class ConnectionBase {
         return aModel;
     }
     
-    public DefaultListModel makeListModel(ResultSet rs) {
+    public static DefaultListModel makeListModel(ResultSet rs) {
         DefaultListModel listModel = new DefaultListModel();
         
         try
@@ -176,8 +108,7 @@ public class ConnectionBase {
     
     //da bi cbmodel bio napravljen metodom napraviComboBoxModel ResultSet koji mu se prosledjuje mora da vraca
     //samo dve kolone - prva je primary key - druga je vrednost koja ce biti ispisana u comboboxu
-    public DefaultComboBoxModel napraviComboBoxModel(ResultSet rs)
-    {
+    public static DefaultComboBoxModel napraviComboBoxModel(ResultSet rs) {
         //classa ComboHolder je nested classa definisana gore ^
         //cbModel je vector te klase
         Vector<Pair> cbModel = new Vector<Pair>();
@@ -215,8 +146,10 @@ public class ConnectionBase {
         return new DefaultComboBoxModel(cbModel);
     }
     
-    public static int vratiPozicijuNaOsnovuPrimaryKeyUCBModelu(javax.swing.ComboBoxModel cbModel, String vrednost)
-    {
+    public static int vratiPozicijuNaOsnovuPrimaryKeyUCBModelu(
+            ComboBoxModel cbModel, 
+            String vrednost) {
+        
         //petljom se prolazi kroz vektor cbModel, dok se ne nadje na kojoj poziciji
         //se nalazi prosledjeno odeljenje, i onda se combobox cbOdeljenje postavi na tu poziciju
         for (int iCount = 0; iCount < cbModel.getSize(); iCount++)
@@ -229,34 +162,10 @@ public class ConnectionBase {
         return 0;
     }
     
-    public static String vratiPrimaryKeyNaOsnovuPozicijeUCBModelu(javax.swing.ComboBoxModel cbModel, int pozicija)
-    {
+    public static String vratiPrimaryKeyNaOsnovuPozicijeUCBModelu(
+            ComboBoxModel cbModel, 
+            int pozicija) {
+        
        return String.valueOf(((Pair)cbModel.getElementAt(pozicija)).getNum());
-    }   
-    
-    //pass se u tabeli cuva kao md5 hash pravog passworda; ova metoda
-    //pretvara string unet u polju u md5 koji je uporediv s podacima iz tabele
-    public static String string2md5(String s)
-    {
-        String hashTekst = "";
-        try {
-            byte[] bajtovaUSifri = s.getBytes("UTF-8");
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.reset();
-            m.update(bajtovaUSifri);
-            byte[] digest = m.digest();
-            BigInteger bigInt = new BigInteger(1,digest);
-            hashTekst = bigInt.toString(16);
-            //u slucaju da md5 bude kraci od 32, treba ta mesta ispred popuniti nulama
-            while (hashTekst.length() < 32)
-            {
-                hashTekst = "0" + hashTekst;
-            }
-        } catch (UnsupportedEncodingException | NoSuchAlgorithmException ex) {
-            System.out.println(ex);
-                //Logger.getLogger(fLog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-            
-        return hashTekst;
-    }
+    }  
 }

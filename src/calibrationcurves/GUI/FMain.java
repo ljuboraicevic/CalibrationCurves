@@ -1,8 +1,8 @@
 package calibrationcurves.GUI;
 
-import calibrationcurves.connection.CalibrationModel;
-import calibrationcurves.connection.ConnectionBase;
-import calibrationcurves.connection.Pair;
+import calibrationcurves.db.CalibrationModel;
+import calibrationcurves.db.Pair;
+import calibrationcurves.db.ViewUtils;
 import java.sql.ResultSet;
 import javax.swing.JOptionPane;
 
@@ -12,19 +12,16 @@ import javax.swing.JOptionPane;
  */
 public class FMain extends javax.swing.JFrame {
 
-    ConnectionBase cb;
-    
     /**
      * Creates new form FMain
      */
     public FMain() {
         initComponents();
-        cb = new ConnectionBase();
     }
     
     private void loadCalibrationList() {
         ResultSet rs = CalibrationModel.getListOfCalibrations();
-        listCalibrations.setModel(cb.makeListModel(rs));
+        listCalibrations.setModel(ViewUtils.makeListModel(rs));
     }
     
     /**

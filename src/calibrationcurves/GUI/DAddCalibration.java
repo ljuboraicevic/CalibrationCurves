@@ -1,6 +1,6 @@
 package calibrationcurves.GUI;
 
-import calibrationcurves.connection.CalibrationModel;
+import calibrationcurves.db.CalibrationModel;
 import javax.swing.JOptionPane;
 
 /**

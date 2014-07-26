@@ -1,7 +1,6 @@
 package calibrationcurves.GUI;
 
-import calibrationcurves.connection.CalibrationModel;
-import calibrationcurves.connection.ConnectionBase;
+import calibrationcurves.db.CalibrationModel;
 import javax.swing.JOptionPane;
 
 /**
@@ -10,7 +9,6 @@ import javax.swing.JOptionPane;
  */
 public class DAddMeasurement extends javax.swing.JDialog {
 
-    ConnectionBase cb;
     CalibrationModel calibration;
     
     /**
@@ -19,7 +17,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
     public DAddMeasurement(CalibrationModel calibration, java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-        cb = new ConnectionBase();
         this.calibration = calibration;
     }
     

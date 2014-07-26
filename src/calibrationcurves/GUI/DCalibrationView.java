@@ -2,8 +2,8 @@ package calibrationcurves.GUI;
 
 import Jama.Matrix;
 import calibrationcurves.LinearRegression;
-import calibrationcurves.connection.CalibrationModel;
-import calibrationcurves.connection.ConnectionBase;
+import calibrationcurves.db.CalibrationModel;
+import calibrationcurves.db.ViewUtils;
 import java.awt.BorderLayout;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,7 +25,6 @@ import org.jfree.data.xy.XYSeriesCollection;
  */
 public class DCalibrationView extends javax.swing.JDialog {
 
-    ConnectionBase cb;
     CalibrationModel calibration;
     
     /**
@@ -38,7 +37,6 @@ public class DCalibrationView extends javax.swing.JDialog {
     public DCalibrationView(CalibrationModel calibration,java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-        cb = new ConnectionBase();
         this.calibration = calibration;
     }
     
@@ -345,7 +343,7 @@ public class DCalibrationView extends javax.swing.JDialog {
 
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
         ResultSet measurements = calibration.getMeasurements();
-        tMeasurements.setModel(cb.napraviROTableModel(measurements));
+        tMeasurements.setModel(ViewUtils.napraviROTableModel(measurements));
         tMeasurements.getColumnModel().removeColumn(tMeasurements.getColumnModel().getColumn(0));
         displayChart();
     }//GEN-LAST:event_formWindowActivated
