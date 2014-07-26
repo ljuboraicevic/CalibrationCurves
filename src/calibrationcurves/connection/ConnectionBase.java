@@ -52,6 +52,24 @@ public class ConnectionBase {
         }
     }
     
+    public int insertAndGetID(String query) {
+        int result = -1;
+        try {
+            Statement stmt = cb().createStatement();
+            stmt.execute(query);
+            ResultSet rs = stmt.getGeneratedKeys();
+            while (rs.next()) {
+                result = Integer.parseInt(rs.getObject(1).toString());
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ConnectionBase.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, ex);
+            System.exit(1);
+        }
+        
+        return result;
+    }
+    
     public void izvrsiQueryBezRezultata(String kveri) {
         try {
             //ovde pravimo statement i izvrsavamo ga pomocu konekcije

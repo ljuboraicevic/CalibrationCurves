@@ -1,5 +1,6 @@
 package calibrationcurves.GUI;
 
+import calibrationcurves.connection.CalibrationModel;
 import calibrationcurves.connection.ConnectionBase;
 import calibrationcurves.connection.Pair;
 import java.sql.ResultSet;
@@ -22,16 +23,10 @@ public class FMain extends javax.swing.JFrame {
     }
     
     private void loadCalibrationList() {
-        ResultSet rs = cb.izvrsiQuery("SELECT * FROM calibrations "
-                + "ORDER BY calibration_id_pk DESC");
+        ResultSet rs = CalibrationModel.getListOfCalibrations();
         listCalibrations.setModel(cb.makeListModel(rs));
     }
     
-    private void deleteCalibration(int calibration_id_pk) {
-        cb.izvrsiQueryBezRezultata("DELETE FROM calibrations "
-                + "WHERE calibration_id_pk = " + calibration_id_pk);
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -123,7 +118,8 @@ public class FMain extends javax.swing.JFrame {
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
         if (listCalibrations.getSelectedIndex() != -1) {
             Pair pair = (Pair) listCalibrations.getSelectedValue();
-            DCalibrationView dcv = new DCalibrationView(pair.getNum(), this, true);
+            CalibrationModel calibration = new CalibrationModel(pair.getNum());
+            DCalibrationView dcv = new DCalibrationView(calibration, this, true);
             dcv.setLocationRelativeTo(this);
             dcv.setVisible(true);
         } else {
@@ -158,7 +154,7 @@ public class FMain extends javax.swing.JFrame {
                         options[1]) == 0
         ) {
             Pair pair = (Pair) listCalibrations.getSelectedValue();
-            deleteCalibration(pair.getNum());
+            CalibrationModel.deleteCalibration(pair.getNum());
         } else {
             JOptionPane.showMessageDialog(null, "No calibration chosen.");
         }
@@ -168,7 +164,8 @@ public class FMain extends javax.swing.JFrame {
         if (evt.getClickCount() == 2) {
             if (listCalibrations.getSelectedIndex() != -1) {
                 Pair pair = (Pair) listCalibrations.getSelectedValue();
-                DCalibrationView dcv = new DCalibrationView(pair.getNum(), this, true);
+                CalibrationModel calibration = new CalibrationModel(pair.getNum());
+                DCalibrationView dcv = new DCalibrationView(calibration, this, true);
                 dcv.setLocationRelativeTo(this);
                 dcv.setVisible(true);
             } else {

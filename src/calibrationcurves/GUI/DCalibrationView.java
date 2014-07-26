@@ -2,6 +2,7 @@ package calibrationcurves.GUI;
 
 import Jama.Matrix;
 import calibrationcurves.LinearRegression;
+import calibrationcurves.connection.CalibrationModel;
 import calibrationcurves.connection.ConnectionBase;
 import java.awt.BorderLayout;
 import java.sql.ResultSet;
@@ -9,7 +10,6 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -26,7 +26,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 public class DCalibrationView extends javax.swing.JDialog {
 
     ConnectionBase cb;
-    int calibration;
+    CalibrationModel calibration;
     
     /**
      * Creates new form DCalibrationView
@@ -35,29 +35,17 @@ public class DCalibrationView extends javax.swing.JDialog {
      * @param parent
      * @param modal
      */
-    public DCalibrationView(int calibration,java.awt.Frame parent, boolean modal) {
+    public DCalibrationView(CalibrationModel calibration,java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
         cb = new ConnectionBase();
         this.calibration = calibration;
     }
     
-    private DefaultTableModel loadMeasurements() {
-        ResultSet rs = cb.izvrsiQuery("SELECT measurements_id_pk, time, fibrinogen "
-                + "FROM measurements WHERE calibration_id_fk = " + calibration);
-        return cb.napraviROTableModel(rs);
-    }
-    
-    private void deleteMeasurement(String id) {
-        cb.izvrsiQueryBezRezultata("DELETE FROM measurements WHERE "
-                + "measurements_id_pk = " + id);
-    }
-        
     private void displayChart() {
         try {
-            //get points from database
-            ResultSet rsPoints = cb.izvrsiQuery("SELECT time, fibrinogen "
-                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
+            //get points for user points calibration
+            ResultSet rsPoints = calibration.getPoints();
             
             //add points to xyseries
             XYSeries points = new XYSeries("Points");
@@ -68,8 +56,7 @@ public class DCalibrationView extends javax.swing.JDialog {
             
             //add learned function to xyseries
             //get points from database
-            ResultSet rsLearned = cb.izvrsiQuery("SELECT x, y "
-                    + "FROM learned_points WHERE calibration_id_fk = " + calibration);
+            ResultSet rsLearned = calibration.getLearnedPoints();
             
             //add points to xyseries
             XYSeries learned = new XYSeries("Learned");
@@ -113,16 +100,13 @@ public class DCalibrationView extends javax.swing.JDialog {
     
     private void learn() {
         try {
-            ResultSet rs = cb.izvrsiQuery("SELECT COUNT(*) "
-                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
-            
-            int rows = rs.getInt("COUNT(*)");
+            int rows = calibration.getNumberOfMeasurements();
             
             double[][] X = new double[4][rows];
             double[] y = new double[rows];
             
-            rs = cb.izvrsiQuery("SELECT time, fibrinogen "
-                    + "FROM measurements WHERE calibration_id_fk = " + calibration);
+            //get user input points
+            ResultSet userPoints = calibration.getUserPoints();
             
             int iCount = 0;
             double x1sum = 0;
@@ -136,9 +120,9 @@ public class DCalibrationView extends javax.swing.JDialog {
             double x3max = Double.NEGATIVE_INFINITY;
             
             //populate input
-            while (rs.next()) {
-                y[iCount] = Double.parseDouble(rs.getString("fibrinogen"));
-                double x = Double.parseDouble(rs.getString("time"));
+            while (userPoints.next()) {
+                y[iCount] = Double.parseDouble(userPoints.getString("fibrinogen"));
+                double x = Double.parseDouble(userPoints.getString("time"));
                 //adding x to third power
                 X[0][iCount] = 1;
                 X[1][iCount] = x;
@@ -202,10 +186,10 @@ public class DCalibrationView extends javax.swing.JDialog {
             ranges[3] = x3range;
             
             Matrix theta = LinearRegression.compute(X, y, 0.6, 5000);
-            addLearnedFunction(theta, means, ranges);
+            calibration.addLearnedFunction(theta, means, ranges);
             
             //calculate 20 points for learned function
-            deleteLearnedPoints(calibration);
+            calibration.deleteAllLearnedPoints();
             double step = (x1max - x1min) / 18;
             int start = (int) (x1min / step);
             double[] thetas = theta.getRowPackedCopy();
@@ -217,7 +201,7 @@ public class DCalibrationView extends javax.swing.JDialog {
                         + thetas[3] * ((cx*cx*cx - means[3]) / ranges[3]);
                 
                 //and add them to learned_points
-                addLearnedPoint(cx, cy, calibration);
+                calibration.addLearnedPoint(cx, cy);
             }
             
             //plot the chart
@@ -227,32 +211,6 @@ public class DCalibrationView extends javax.swing.JDialog {
         }
     }
     
-    private void deleteLearnedPoints(int pCalibration) {
-        cb.izvrsiQueryBezRezultata("DELETE FROM learned_points WHERE "
-                + "calibration_id_fk = " + pCalibration);
-    }
-    
-    private void addLearnedPoint(double x, double y, int calibration_id_fk) {
-        cb.izvrsiQueryBezRezultata("INSERT INTO learned_points (x, y, calibration_id_fk) VALUES "
-                + "("+ x +", "+ y +", "+ calibration_id_fk +")");
-    }
-    
-    private void addLearnedFunction(Matrix theta, double[] means, double[] ranges) {
-        //first, delete previously learned functions (if any)
-        cb.izvrsiQueryBezRezultata("DELETE FROM learned_functions "
-                + "WHERE calibration_id_fk = " + calibration);
-        
-        double[] m = theta.getRowPackedCopy();
-        cb.izvrsiQueryBezRezultata("INSERT INTO \"learned_functions\" "
-                + "(\"theta0\", \"theta1\", \"theta2\", \"theta3\", "
-                + "\"calibration_id_fk\", \"mean1\", \"mean2\", \"mean3\", "
-                + "\"range1\", \"range2\", \"range3\") VALUES "
-                + "(\""+ m[0] +"\", \""+ m[1] +"\", \""+ m[2] +"\", \""+ m[3] +"\", \""
-                + calibration +"\", \""+means[1]+"\", \""+means[2]+"\", \""+means[3]+"\" "
-                + ", \""+ranges[1]+"\", \""+ranges[2]+"\", \""+ranges[3]+"\")"
-                        );
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -386,7 +344,8 @@ public class DCalibrationView extends javax.swing.JDialog {
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void formWindowActivated(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowActivated
-        tMeasurements.setModel(loadMeasurements());
+        ResultSet measurements = calibration.getMeasurements();
+        tMeasurements.setModel(cb.napraviROTableModel(measurements));
         tMeasurements.getColumnModel().removeColumn(tMeasurements.getColumnModel().getColumn(0));
         displayChart();
     }//GEN-LAST:event_formWindowActivated
@@ -408,7 +367,7 @@ public class DCalibrationView extends javax.swing.JDialog {
                         options[1]) == 0
         ) {
             String id = tMeasurements.getModel().getValueAt(tMeasurements.getSelectedRow(), 0).toString();
-            deleteMeasurement(id);
+            calibration.deleteMeasurement(id);
         } else {
             JOptionPane.showMessageDialog(null, "No measurement chosen.");
         }
@@ -430,22 +389,21 @@ public class DCalibrationView extends javax.swing.JDialog {
             double[] means  = new double[3];
             double[] ranges = new double[3];
             
-            ResultSet rs = cb.izvrsiQuery("SELECT * FROM learned_functions "
-                    + "WHERE calibration_id_fk = " + calibration);
+            ResultSet func = calibration.getLearnedFunctionParameters();
             
-            while (rs.next()) {
-                thetas[0] = Double.parseDouble(rs.getObject("theta0").toString());
-                thetas[1] = Double.parseDouble(rs.getObject("theta1").toString());
-                thetas[2] = Double.parseDouble(rs.getObject("theta2").toString());
-                thetas[3] = Double.parseDouble(rs.getObject("theta3").toString());
+            while (func.next()) {
+                thetas[0] = Double.parseDouble(func.getObject("theta0").toString());
+                thetas[1] = Double.parseDouble(func.getObject("theta1").toString());
+                thetas[2] = Double.parseDouble(func.getObject("theta2").toString());
+                thetas[3] = Double.parseDouble(func.getObject("theta3").toString());
                 
-                means[0] = Double.parseDouble(rs.getObject("mean1").toString());
-                means[1] = Double.parseDouble(rs.getObject("mean2").toString());
-                means[2] = Double.parseDouble(rs.getObject("mean3").toString());
+                means[0] = Double.parseDouble(func.getObject("mean1").toString());
+                means[1] = Double.parseDouble(func.getObject("mean2").toString());
+                means[2] = Double.parseDouble(func.getObject("mean3").toString());
                 
-                ranges[0] = Double.parseDouble(rs.getObject("range1").toString());
-                ranges[1] = Double.parseDouble(rs.getObject("range2").toString());
-                ranges[2] = Double.parseDouble(rs.getObject("range3").toString());
+                ranges[0] = Double.parseDouble(func.getObject("range1").toString());
+                ranges[1] = Double.parseDouble(func.getObject("range2").toString());
+                ranges[2] = Double.parseDouble(func.getObject("range3").toString());
             }
             
             DCalculator dc = new DCalculator(null, true, thetas, means, ranges);

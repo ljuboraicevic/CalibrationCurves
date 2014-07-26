@@ -1,5 +1,6 @@
 package calibrationcurves.GUI;
 
+import calibrationcurves.connection.CalibrationModel;
 import calibrationcurves.connection.ConnectionBase;
 import javax.swing.JOptionPane;
 
@@ -10,12 +11,12 @@ import javax.swing.JOptionPane;
 public class DAddMeasurement extends javax.swing.JDialog {
 
     ConnectionBase cb;
-    int calibration;
+    CalibrationModel calibration;
     
     /**
      * Creates new form DAddMeasurement
      */
-    public DAddMeasurement(int calibration, java.awt.Frame parent, boolean modal) {
+    public DAddMeasurement(CalibrationModel calibration, java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
         cb = new ConnectionBase();
@@ -31,12 +32,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
         return true;
     }
     
-    private void addMeasurement(String fibrinogen, String time) {
-        cb.izvrsiQueryBezRezultata("INSERT INTO \"measurements\" "
-                + "(\"time\", \"fibrinogen\", \"calibration_id_fk\") VALUES "
-                + "(\""+ time +"\", \""+ fibrinogen +"\", \""+ calibration +"\")");
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -112,7 +107,7 @@ public class DAddMeasurement extends javax.swing.JDialog {
                 tfTime.getText().length() > 0 &&
                 isDouble(tfTime.getText())
         ) {
-            addMeasurement(tfFibrinogen.getText(), tfTime.getText());
+            calibration.addMeasurement(tfFibrinogen.getText(), tfTime.getText());
             this.dispose();
         } else {
             JOptionPane.showMessageDialog(this, "Time and fibrinogen values "
