@@ -73,14 +73,6 @@ public class CalibrationModel {
     }
     
     /**
-     * Deletes all points used to plot the learned function
-     */
-//    public void deleteAllLearnedPoints() {
-//        cb.executeQueryNoResults("DELETE FROM learned_points WHERE "
-//                + "calibration_id_fk = " + calibration);
-//    }
-    
-    /**
      * Adds a learned point which is used to plot the learned function
      * 
      * @param x
@@ -176,5 +168,18 @@ public class CalibrationModel {
         ConnectionBase lcb = new ConnectionBase();
         lcb.executeQueryNoResults("DELETE FROM calibrations "
                 + "WHERE calibration_id_pk = " + calibration_id_pk);
+    }
+    
+    /**
+     * Check if there is a corresponding learned function for this calibration.
+     * 
+     * @return true if there is, false if there isn't
+     * @throws java.sql.SQLException
+     */
+    public boolean isLearned() throws SQLException {
+        ResultSet rs = cb.executeQuery("SELECT COUNT(*) "
+                + "FROM learned_functions WHERE calibration_id_fk = " + calibration);
+            
+        return rs.getInt("COUNT(*)") > 0;
     }
 }

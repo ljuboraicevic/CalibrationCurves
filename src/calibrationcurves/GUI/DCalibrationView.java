@@ -381,31 +381,36 @@ public class DCalibrationView extends javax.swing.JDialog {
 
     private void btnCalculatorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCalculatorActionPerformed
         try {
-            //get thetas, means and ranges for this calibration from database
-            double[] thetas = new double[4];
-            double[] means  = new double[3];
-            double[] ranges = new double[3];
-            
-            ResultSet func = calibration.getLearnedFunctionParameters();
-            
-            while (func.next()) {
-                thetas[0] = Double.parseDouble(func.getObject("theta0").toString());
-                thetas[1] = Double.parseDouble(func.getObject("theta1").toString());
-                thetas[2] = Double.parseDouble(func.getObject("theta2").toString());
-                thetas[3] = Double.parseDouble(func.getObject("theta3").toString());
-                
-                means[0] = Double.parseDouble(func.getObject("mean1").toString());
-                means[1] = Double.parseDouble(func.getObject("mean2").toString());
-                means[2] = Double.parseDouble(func.getObject("mean3").toString());
-                
-                ranges[0] = Double.parseDouble(func.getObject("range1").toString());
-                ranges[1] = Double.parseDouble(func.getObject("range2").toString());
-                ranges[2] = Double.parseDouble(func.getObject("range3").toString());
+            if (calibration.isLearned()) {
+                //get thetas, means and ranges for this calibration from database
+                double[] thetas = new double[4];
+                double[] means  = new double[3];
+                double[] ranges = new double[3];
+
+                ResultSet func = calibration.getLearnedFunctionParameters();
+
+                while (func.next()) {
+                    thetas[0] = Double.parseDouble(func.getObject("theta0").toString());
+                    thetas[1] = Double.parseDouble(func.getObject("theta1").toString());
+                    thetas[2] = Double.parseDouble(func.getObject("theta2").toString());
+                    thetas[3] = Double.parseDouble(func.getObject("theta3").toString());
+
+                    means[0] = Double.parseDouble(func.getObject("mean1").toString());
+                    means[1] = Double.parseDouble(func.getObject("mean2").toString());
+                    means[2] = Double.parseDouble(func.getObject("mean3").toString());
+
+                    ranges[0] = Double.parseDouble(func.getObject("range1").toString());
+                    ranges[1] = Double.parseDouble(func.getObject("range2").toString());
+                    ranges[2] = Double.parseDouble(func.getObject("range3").toString());
+                }
+
+                DCalculator dc = new DCalculator(null, true, thetas, means, ranges);
+                dc.setLocationRelativeTo(this);
+                dc.setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Function not learned! "
+                        + "Press the learn button.");
             }
-            
-            DCalculator dc = new DCalculator(null, true, thetas, means, ranges);
-            dc.setLocationRelativeTo(this);
-            dc.setVisible(true);
         } catch (SQLException ex) {
             Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
         }
