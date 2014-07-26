@@ -189,16 +189,12 @@ public class DCalibrationView extends javax.swing.JDialog {
             //calculate 20 points for learned function
             double step = (x1max - x1min) / 18;
             int start = (int) (x1min / step);
-            double[] thetas = theta.getRowPackedCopy();
-            for (iCount = start; iCount < start + 20; iCount++) {
-                double cx = iCount * step;
-                double cy = thetas[0] 
-                        + thetas[1] * ((cx - means[1]) / ranges[1])
-                        + thetas[2] * ((cx*cx - means[2]) / ranges[2])
-                        + thetas[3] * ((cx*cx*cx - means[3]) / ranges[3]);
-                
-                //and add them to learned_points
-                calibration.addLearnedPoint(cx, cy);
+            double end = start + step * 20.0;
+            
+            double[][] twentyPoints = calibration.getBatchPredictions(start, end, step);
+            
+            for (iCount = 0; iCount < twentyPoints.length; iCount++) {
+                calibration.addLearnedPoint(twentyPoints[iCount][0], twentyPoints[iCount][1]);
             }
             
             //plot the chart
@@ -307,7 +303,7 @@ public class DCalibrationView extends javax.swing.JDialog {
                                 .addComponent(btnLearn))
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                             .addComponent(btnCalculator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(rightPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -380,40 +376,9 @@ public class DCalibrationView extends javax.swing.JDialog {
     }//GEN-LAST:event_btnLearnActionPerformed
 
     private void btnCalculatorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCalculatorActionPerformed
-        try {
-            if (calibration.isLearned()) {
-                //get thetas, means and ranges for this calibration from database
-                double[] thetas = new double[4];
-                double[] means  = new double[3];
-                double[] ranges = new double[3];
-
-                ResultSet func = calibration.getLearnedFunctionParameters();
-
-                while (func.next()) {
-                    thetas[0] = Double.parseDouble(func.getObject("theta0").toString());
-                    thetas[1] = Double.parseDouble(func.getObject("theta1").toString());
-                    thetas[2] = Double.parseDouble(func.getObject("theta2").toString());
-                    thetas[3] = Double.parseDouble(func.getObject("theta3").toString());
-
-                    means[0] = Double.parseDouble(func.getObject("mean1").toString());
-                    means[1] = Double.parseDouble(func.getObject("mean2").toString());
-                    means[2] = Double.parseDouble(func.getObject("mean3").toString());
-
-                    ranges[0] = Double.parseDouble(func.getObject("range1").toString());
-                    ranges[1] = Double.parseDouble(func.getObject("range2").toString());
-                    ranges[2] = Double.parseDouble(func.getObject("range3").toString());
-                }
-
-                DCalculator dc = new DCalculator(null, true, thetas, means, ranges);
-                dc.setLocationRelativeTo(this);
-                dc.setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this, "Function not learned! "
-                        + "Press the learn button.");
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(DCalibrationView.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        DCalculator dc = new DCalculator(calibration, null, true);
+        dc.setLocationRelativeTo(this);
+        dc.setVisible(true);
     }//GEN-LAST:event_btnCalculatorActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

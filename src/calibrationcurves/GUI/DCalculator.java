@@ -1,5 +1,6 @@
 package calibrationcurves.GUI;
 
+import calibrationcurves.db.CalibrationModel;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -7,31 +8,16 @@ import javax.swing.table.DefaultTableModel;
  * @author Ljubo Raicevic <rljubo90@gmail.com>
  */
 public class DCalculator extends javax.swing.JDialog {
-
-    //this data is needed to do the calculation
-    private final double[] theta;
-    private final double[] mean;
-    private final double[] range;
+    
+    private final CalibrationModel calibration;
     
     /**
      * Creates new form DCalculator
      */
-    public DCalculator(java.awt.Frame parent, boolean modal, 
-            double[] pThetas, double[] pMeans, double[] pRanges) {
+    public DCalculator(CalibrationModel c, java.awt.Frame parent, boolean modal) {
         super(parent, modal);
-        
-        theta = pThetas;
-        mean = pMeans;
-        range = pRanges;
-        
+        this.calibration = c;
         initComponents();
-    }
-    
-    private double calculateFibrinogen(double time) {
-        return theta[0] 
-                + theta[1] * ((time - mean[0]) / range[0])
-                + theta[2] * ((time*time - mean[1]) / range[1])
-                + theta[3] * ((time*time*time - mean[2]) / range[2]);
     }
 
     /**
@@ -153,9 +139,19 @@ public class DCalculator extends javax.swing.JDialog {
 
     private void btnCalculateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCalculateActionPerformed
         DefaultTableModel model = (DefaultTableModel) jTable.getModel();
+        double[] times = new double[model.getRowCount()];
+        
+        //get time values
         for (int iCount = 0; iCount < model.getRowCount(); iCount++) {
-            double time = (double) model.getValueAt(iCount, 0);
-            model.setValueAt(calculateFibrinogen(time), iCount, 1);
+            times[iCount] = (double) model.getValueAt(iCount, 0);
+        }
+        
+        //do a batch calculation
+        double[][] result = calibration.getBatchPredictions(times);
+        
+        //update values in the table
+        for (int iCount = 0; iCount < model.getRowCount(); iCount++) {
+            model.setValueAt(result[iCount][1], iCount, 1);
         }
     }//GEN-LAST:event_btnCalculateActionPerformed
 

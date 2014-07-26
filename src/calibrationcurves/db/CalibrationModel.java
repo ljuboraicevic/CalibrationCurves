@@ -182,4 +182,87 @@ public class CalibrationModel {
             
         return rs.getInt("COUNT(*)") > 0;
     }
+    
+    /**
+     * Calculates predictions given start, end and step of the interval
+     * 
+     * @param start
+     * @param end
+     * @param step
+     * @return matrix of doubles whose first column contains time values, and  
+     * the second contains predictions
+     */
+    public double[][] getBatchPredictions(double start, double end, double step) {
+        double times[] = new double[(int)Math.ceil((end - start) / step)];
+        
+        for (int iCount = 0; iCount < times.length; iCount++) {
+            times[iCount] = start + iCount * step;
+        }
+        
+        return calculateBatchPredictions(times);
+    }
+    
+    /**
+     * Calculates predictions given array of doubles
+     * 
+     * @param times array of doubles
+     * @return matrix of doubles whose first column contains time values, and  
+     * the second contains predictions
+     */
+    public double[][] getBatchPredictions(double[] times) {
+        return calculateBatchPredictions(times);
+    }
+    
+    /**
+     * Calculates predictions for an array of doubles.
+     * 
+     * @param times array of doubles
+     * @return matrix of doubles whose first column contains time values, and  
+     * the second contains predictions
+     */
+    private double[][] calculateBatchPredictions(double[] times) {
+        double[][] result = new double[times.length][2];
+        try {
+            if (isLearned()) {
+                //get thetas, means and ranges for this calibration from db
+                double[] thetas = new double[4];
+                double[] means  = new double[3];
+                double[] ranges = new double[3];
+
+                ResultSet func = getLearnedFunctionParameters();
+
+                while (func.next()) {
+                    thetas[0] = Double.parseDouble(func.getObject("theta0").toString());
+                    thetas[1] = Double.parseDouble(func.getObject("theta1").toString());
+                    thetas[2] = Double.parseDouble(func.getObject("theta2").toString());
+                    thetas[3] = Double.parseDouble(func.getObject("theta3").toString());
+
+                    means[0] = Double.parseDouble(func.getObject("mean1").toString());
+                    means[1] = Double.parseDouble(func.getObject("mean2").toString());
+                    means[2] = Double.parseDouble(func.getObject("mean3").toString());
+
+                    ranges[0] = Double.parseDouble(func.getObject("range1").toString());
+                    ranges[1] = Double.parseDouble(func.getObject("range2").toString());
+                    ranges[2] = Double.parseDouble(func.getObject("range3").toString());
+                }
+                
+                for (int iCount = 0; iCount < times.length; iCount++) {
+                    double cx = times[iCount];
+                    result[iCount][0] = cx;
+                    result[iCount][1] = thetas[0] 
+                            + thetas[1] * ((cx - means[0]) / ranges[0])
+                            + thetas[2] * ((cx*cx - means[1]) / ranges[1])
+                            + thetas[3] * ((cx*cx*cx - means[2]) / ranges[2]);
+                }
+
+
+            } else {
+                System.out.println("Function not learned! Press the learn button.");
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex);
+        }
+        
+        return result;
+    }
 }
