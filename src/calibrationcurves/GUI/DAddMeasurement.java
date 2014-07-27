@@ -1,6 +1,7 @@
 package calibrationcurves.GUI;
 
 import calibrationcurves.db.CalibrationModel;
+import calibrationcurves.db.ViewUtils;
 import javax.swing.JOptionPane;
 
 /**
@@ -18,15 +19,6 @@ public class DAddMeasurement extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         this.calibration = calibration;
-    }
-    
-    private static boolean isDouble(String s) {
-        try {
-            double d = Double.parseDouble(s);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-        return true;
     }
     
     /**
@@ -100,9 +92,9 @@ public class DAddMeasurement extends javax.swing.JDialog {
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if (tfFibrinogen.getText().length() > 0 &&
-                isDouble(tfFibrinogen.getText()) &&
+                ViewUtils.isDouble(tfFibrinogen.getText()) &&
                 tfTime.getText().length() > 0 &&
-                isDouble(tfTime.getText())
+                ViewUtils.isDouble(tfTime.getText())
         ) {
             calibration.addMeasurement(tfFibrinogen.getText(), tfTime.getText());
             this.dispose();

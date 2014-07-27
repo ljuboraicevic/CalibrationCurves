@@ -15,6 +15,15 @@ import javax.swing.table.DefaultTableModel;
  */
 public class ViewUtils {
     
+    public static boolean isDouble(String s) {
+        try {
+            double d = Double.parseDouble(s);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
+    }
+    
     public static DefaultTableModel napraviROTableModel(ResultSet rs) {
                 
         //overriduje se isCellEditable da uvek vraca false, da bi model,
